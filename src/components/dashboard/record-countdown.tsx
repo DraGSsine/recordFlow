@@ -1,8 +1,9 @@
+"use client"
+
 import React, { useContext, useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { DashboardContext } from "~/context/dashboard-context-provider";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { Button } from "../ui/button";
+import { DashboardContext } from "@/context/dashboard-context-provider";
 
 const RecordCountdown = () => {
     const { startRecording, setStartRecording } = useContext(DashboardContext);
