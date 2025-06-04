@@ -5,29 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 
 const RecordingSettings: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <Card className="bg-card/50 backdrop-blur-sm border border-border shadow-xl">
-      <CardHeader className="pb-4">
-        <CardTitle 
-          className="flex items-center justify-between text-foreground cursor-pointer"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-chart-1/30 rounded-lg blur-sm"></div>
-              <div className="relative p-2 bg-gradient-to-r from-primary/10 to-chart-1/10 rounded-lg border border-primary/20">
-                <Settings className="w-5 h-5 text-primary" />
-              </div>
-            </div>
-            <span>Recording Settings</span>
-          </div>
-          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-        </CardTitle>
-      </CardHeader>
-      
-      {isExpanded && (
         <CardContent className="space-y-6">
           {/* Source Selection */}
           <div className="space-y-3">
@@ -98,7 +78,6 @@ const RecordingSettings: React.FC = () => {
             </div>
           </div>
         </CardContent>
-      )}
     </Card>
   );
 };
