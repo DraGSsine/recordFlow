@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef } from "react";
 import useScreenRecording from "@/lib/hooks/useScreenRecording";
-import WebcamOverlay from "./WebcamOverlay";
 import { testWebcamAccess } from "@/lib/utils/webcamTest";
+import { useRouter } from "next/navigation";
 
 
 const RecordingControl = () => {
   const [recordingTime, setRecordingTime] = useState(0);
+  const router = useRouter();
   const {
     isRecording,
     videoUrl,
@@ -39,6 +40,19 @@ const RecordingControl = () => {
     }
   };
 
+  // Redirect to edit page after recording completes
+  useEffect(() => {
+    if (videoUrl && !isRecording) {
+      // Store the video URL in sessionStorage so we can access it on the edit page
+      sessionStorage.setItem('recordedVideoUrl', videoUrl);
+      if (webcamStream) {
+        sessionStorage.setItem('recordedWebcamUrl', 'webcam-recorded'); // Flag to indicate webcam was recorded
+      }
+      // Navigate to edit page
+      router.push('/edit');
+    }
+  }, [videoUrl, isRecording, webcamStream, router]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -58,14 +72,6 @@ const RecordingControl = () => {
 
   return (
     <div className="relative">
-      {/* Floating Webcam Overlay - Only show when recording */}
-      <WebcamOverlay 
-        stream={webcamStream} 
-        isRecording={isRecording} 
-        cameraEnabled={settings.cameraOn && isRecording}
-        error={error}
-      />
-      
       {/* Main Card */}
       <div className="relative bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 shadow-xl">
         {/* Gradient Background */}
@@ -152,48 +158,6 @@ const RecordingControl = () => {
               <p className="text-sm text-muted-foreground">
                 Status: <span className="capitalize">{status}</span>
               </p>
-            </div>
-          )}
-
-          {/* Video Recording Result */}
-          {videoUrl && !isRecording && (
-            <div className="mt-6 space-y-4">
-              <div className="bg-card/70 backdrop-blur-sm rounded-2xl p-6 border border-border">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Recording Complete!</h3>
-                
-                {/* Video Preview */}
-                <div className="bg-black rounded-lg overflow-hidden mb-4">
-                  <video 
-                    src={videoUrl} 
-                    controls 
-                    className="w-full h-auto max-h-64 object-contain"
-                    preload="metadata"
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = videoUrl;
-                      a.download = `screen-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
-                      a.click();
-                    }}
-                    className="flex-1"
-                  >
-                    Download Video
-                  </Button>
-                  
-                  <Button
-                    onClick={clearVideo}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Clear Recording
-                  </Button>
-                </div>
-              </div>
             </div>
           )}
         </div>
