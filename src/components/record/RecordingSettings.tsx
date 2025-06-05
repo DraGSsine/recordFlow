@@ -1,22 +1,14 @@
 import React, { useEffect, useState } from "react";
-import {
-  Settings,
-  Monitor,
-  Mic,
-  Volume2,
-  Camera,
-  ChevronDown,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Mic, Volume2, Camera } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { RecordingSettingsType } from "@/types/types";
+import { recordingSettingsSchema } from "@/lib/validations";
 
 const defaultSettings: RecordingSettingsType = {
   microphoneOn: true,
   systemAudioOn: false,
   cameraOn: true,
-  recordingSource: "window",
 };
 
 const RecordingSettings: React.FC = () => {
@@ -26,102 +18,47 @@ const RecordingSettings: React.FC = () => {
   useEffect(() => {
     const settings = localStorage.getItem("screenRecordSettings");
     if (settings) {
-      const parsedSettings: RecordingSettingsType = JSON.parse(settings);
-      setScreenRecordSettings(parsedSettings);
+      try {
+        const parsedSettings = JSON.parse(settings);
+        // Validate against the schema, which no longer includes recordingSource
+        const validatedSettings = recordingSettingsSchema.parse(parsedSettings);
+        setScreenRecordSettings(validatedSettings);
+      } catch (error) {
+        console.error("Error parsing screen record settings:", error);
+        localStorage.removeItem("screenRecordSettings");
+        // Set to a default that matches the new schema
+        setScreenRecordSettings(defaultSettings);
+        localStorage.setItem(
+          "screenRecordSettings",
+          JSON.stringify(defaultSettings)
+        );
+        return;
+      }
     } else {
       setScreenRecordSettings(defaultSettings);
+      localStorage.setItem(
+        "screenRecordSettings",
+        JSON.stringify(defaultSettings)
+      );
     }
   }, []);
+
+  // Helper function to update settings and localStorage
+  const updateSettings = (newSettings: Partial<RecordingSettingsType>) => {
+    const updatedSettings = { ...screenRecordSettings, ...newSettings };
+    // Ensure we only try to parse/validate settings that conform to the schema
+    recordingSettingsSchema.parse(updatedSettings); // Validate before storing
+    setScreenRecordSettings(updatedSettings);
+    localStorage.setItem(
+      "screenRecordSettings",
+      JSON.stringify(updatedSettings)
+    );
+  };
+
   return (
     <Card className="bg-card/50 backdrop-blur-sm border border-border shadow-xl">
       <CardContent className="space-y-6">
-        {/* Source Selection */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-foreground mb-3">
-            Recording Source
-          </h3>
-          <div className="grid grid-cols-1 gap-3">
-            <Button
-              variant="outline"
-              className={`flex items-center justify-between h-auto p-4 text-left transition-all ${
-                screenRecordSettings.recordingSource === "screen"
-                  ? "bg-primary/10 border-primary/30 hover:border-primary/50 hover:bg-primary/20"
-                  : "bg-card/30 border-border hover:border-muted"
-              }`}
-              onClick={() => {
-                setScreenRecordSettings((prev) => ({
-                  ...prev,
-                  recordingSource: "screen",
-                }));
-                localStorage.setItem(
-                  "screenRecordSettings",
-                  JSON.stringify({
-                    ...screenRecordSettings,
-                    recordingSource: "screen",
-                  })
-                );
-              }}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-chart-2/20 rounded-lg border border-chart-2/30">
-                  <Monitor className="w-5 h-5 text-chart-2" />
-                </div>
-                <div>
-                  <div className="text-foreground font-medium">Full Screen</div>
-                  <div className="text-xs text-muted-foreground">
-                    Capture entire screen
-                  </div>
-                </div>
-              </div>
-              <div className={`w-3 h-3 rounded-full ${
-                screenRecordSettings.recordingSource === "screen"
-                  ? "bg-primary"
-                  : "bg-muted-foreground/50"
-              }`}></div>
-            </Button>
-
-            <Button
-              variant="outline"
-              className={`flex items-center justify-between h-auto p-4 text-left transition-all ${
-                screenRecordSettings.recordingSource === "window"
-                  ? "bg-primary/10 border-primary/30 hover:border-primary/50 hover:bg-primary/20"
-                  : "bg-card/30 border-border hover:border-muted"
-              }`}
-              onClick={() => {
-                setScreenRecordSettings((prev) => ({
-                  ...prev,
-                  recordingSource: "window",
-                }));
-                localStorage.setItem(
-                  "screenRecordSettings",
-                  JSON.stringify({
-                    ...screenRecordSettings,
-                    recordingSource: "window",
-                  })
-                );
-              }}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-muted/20 rounded-lg border border-muted/30">
-                  <Camera className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <div className="text-muted-foreground font-medium">
-                    Window
-                  </div>
-                  <div className="text-xs text-muted-foreground/70">
-                    Select specific window
-                  </div>
-                </div>
-              </div>
-              <div className={`w-3 h-3 rounded-full ${
-                screenRecordSettings.recordingSource === "window"
-                  ? "bg-primary"
-                  : "bg-muted-foreground/50"
-              }`}></div>
-            </Button>
-          </div>
-        </div>
+        {/* Source Selection UI has been removed as getDisplayMedia handles this */}
 
         {/* Audio Settings */}
         <div className="space-y-4">
@@ -143,18 +80,10 @@ const RecordingSettings: React.FC = () => {
             </div>
             <Switch
               checked={screenRecordSettings.microphoneOn}
-              onChange={(e) => {
-                setScreenRecordSettings((prev) => ({
-                  ...prev,
-                  microphoneOn: !prev.microphoneOn,
-                }));
-                localStorage.setItem(
-                  "screenRecordSettings",
-                  JSON.stringify({
-                    ...screenRecordSettings,
-                    microphoneOn: !screenRecordSettings.microphoneOn,
-                  })
-                );
+              onClick={() => {
+                updateSettings({
+                  microphoneOn: !screenRecordSettings.microphoneOn,
+                });
               }}
             />
           </div>
@@ -173,18 +102,30 @@ const RecordingSettings: React.FC = () => {
             </div>
             <Switch
               checked={screenRecordSettings.systemAudioOn}
-              onChange={(e) => {
-                setScreenRecordSettings((prev) => ({
-                  ...prev,
-                  systemAudioOn: !prev.systemAudioOn,
-                }));
-                localStorage.setItem(
-                  "screenRecordSettings",
-                  JSON.stringify({
-                    ...screenRecordSettings,
-                    systemAudioOn: !screenRecordSettings.systemAudioOn,
-                  })
-                );
+              onClick={() => {
+                updateSettings({
+                  systemAudioOn: !screenRecordSettings.systemAudioOn,
+                });
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-card/30 rounded-xl border border-border">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-chart-2/20 rounded-lg border border-chart-2/30">
+                <Camera className="w-5 h-5 text-chart-2" />
+              </div>
+              <div>
+                <div className="text-foreground font-medium">Webcam</div>
+                <div className="text-xs text-muted-foreground">
+                  Show your face in a floating window
+                </div>
+              </div>
+            </div>
+            <Switch
+              checked={screenRecordSettings.cameraOn}
+              onClick={() => {
+                updateSettings({ cameraOn: !screenRecordSettings.cameraOn });
               }}
             />
           </div>

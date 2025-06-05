@@ -7,19 +7,7 @@ import RecordingSettings from '@/components/record/RecordingSettings';
 import { toast } from 'sonner';
 
 const Index = () => {
-  const handleStartRecording = () => {
-    console.log('Starting recording...');
-    toast("Recording Started",{
-      description: "Your screen recording has begun.",
-    });
-  };
 
-  const handleStopRecording = () => {
-    console.log('Stopping recording...');
-    toast("Recording Stopped",{
-      description: "Your screen recording has been saved.",
-    });
-  };
 
   return (
     <div className="bg-background">
@@ -32,11 +20,7 @@ const Index = () => {
             {/* Left Column - Recording Control */}
             <div className="lg:col-span-4">
               <div className="sticky top-8 space-y-8">
-                <RecordingControl
-                  onStartRecording={handleStartRecording}
-                  onStopRecording={handleStopRecording}
-                  includeWebcam={true}
-                />
+                <RecordingControl/>
                 
                 {/* Settings Card */}
                 <RecordingSettings />

@@ -3,32 +3,39 @@ import { Play, Square, Pause, Camera, CameraOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEffect, useState, useRef } from "react";
+import useScreenRecording from "@/lib/hooks/useScreenRecording";
+import WebcamOverlay from "./WebcamOverlay";
+import { testWebcamAccess } from "@/lib/utils/webcamTest";
 
-interface RecordingControlProps {
-  onStartRecording: () => void;
-  onStopRecording: () => void;
-  includeWebcam?: boolean;
-}
 
-const RecordingControl: React.FC<RecordingControlProps> = ({
-  onStartRecording,
-  onStopRecording,
-  includeWebcam = true,
-}) => {
-  const [isRecording, setIsRecording] = useState(false);
+const RecordingControl = () => {
   const [recordingTime, setRecordingTime] = useState(0);
+  const {
+    isRecording,
+    videoUrl,
+    startRecording,
+    stopRecording,
+    clearVideo,
+    webcamStream,
+    settings,
+    status,
+    error
+  } = useScreenRecording();
 
-
-  const handleToggleRecording = () => {
+  const handleToggleRecording = async () => {
     if (isRecording) {
-      setIsRecording(false);
+      stopRecording();
       setRecordingTime(0);
-      onStopRecording();
-      // stopRecording();
     } else {
-      setIsRecording(true);
-      onStartRecording();
-      // startRecording();
+      // Test webcam access before starting recording
+      console.log("🎬 Starting recording with camera enabled:", settings.cameraOn);
+      if (settings.cameraOn) {
+        const webcamWorks = await testWebcamAccess();
+        console.log("🎬 Webcam test result:", webcamWorks);
+      }
+      
+      await startRecording();
+      setRecordingTime(0);
     }
   };
 
@@ -51,6 +58,14 @@ const RecordingControl: React.FC<RecordingControlProps> = ({
 
   return (
     <div className="relative">
+      {/* Floating Webcam Overlay - Only show when recording */}
+      <WebcamOverlay 
+        stream={webcamStream} 
+        isRecording={isRecording} 
+        cameraEnabled={settings.cameraOn && isRecording}
+        error={error}
+      />
+      
       {/* Main Card */}
       <div className="relative bg-card/50 backdrop-blur-sm border border-border rounded-3xl p-8 shadow-xl">
         {/* Gradient Background */}
@@ -114,7 +129,7 @@ const RecordingControl: React.FC<RecordingControlProps> = ({
           )}
 
           {/* Action Hint */}
-          {!isRecording && (
+          {!isRecording && !videoUrl && (
             <div className="text-muted-foreground text-center">
               <p className="text-lg mb-2">Click to start recording</p>
               <p className="text-sm opacity-75">
@@ -122,7 +137,65 @@ const RecordingControl: React.FC<RecordingControlProps> = ({
               </p>
             </div>
           )}
-          {/* <video src={mediaBlobUrl} controls autoPlay loop /> */}
+
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+              <p className="text-destructive text-sm font-medium">Recording Error:</p>
+              <p className="text-destructive text-xs mt-1">{String(error)}</p>
+            </div>
+          )}
+
+          {/* Recording Status */}
+          {status && status !== "idle" && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Status: <span className="capitalize">{status}</span>
+              </p>
+            </div>
+          )}
+
+          {/* Video Recording Result */}
+          {videoUrl && !isRecording && (
+            <div className="mt-6 space-y-4">
+              <div className="bg-card/70 backdrop-blur-sm rounded-2xl p-6 border border-border">
+                <h3 className="text-lg font-semibold text-foreground mb-4">Recording Complete!</h3>
+                
+                {/* Video Preview */}
+                <div className="bg-black rounded-lg overflow-hidden mb-4">
+                  <video 
+                    src={videoUrl} 
+                    controls 
+                    className="w-full h-auto max-h-64 object-contain"
+                    preload="metadata"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = videoUrl;
+                      a.download = `screen-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+                      a.click();
+                    }}
+                    className="flex-1"
+                  >
+                    Download Video
+                  </Button>
+                  
+                  <Button
+                    onClick={clearVideo}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Clear Recording
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
