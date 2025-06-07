@@ -11,13 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { LogOut, Bug } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export default function UserProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleLogout = () => {
-    console.log("Logout clicked");
-    // Add your logout logic here
+  const handleLogout = async () => {
+    await authClient.signOut();
+    window.location.href = "/"; // Redirect to landing page after logout
   };
 
   const handleReportBug = () => {

@@ -1,6 +1,0 @@
-{
-  "databaseURL": "https://DraGSsine-X-s-workspace-vvns1t.us-east-1.xata.sh/db/recordflow",
-  "codegen": {
-    "output": "src/xata.ts"
-  }
-}
